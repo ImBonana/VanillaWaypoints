@@ -26,18 +26,20 @@ jobs:
       - name: build
         run: ./gradlew build
 
-      - name: capture fabric artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: fabric
-          path: |
-            fabric/build/libs/*.jar
-            !fabric/build/libs/*-raw.jar
+      - name: find jars
+        id: jars
+        run: |
+          echo "fabric=$(ls fabric/build/libs/*.jar | grep -v -- '-raw.jar' | head -n1)" >> "$GITHUB_OUTPUT"
+          echo "neoforge=$(ls neoforge/build/libs/*.jar | grep -v -- '-raw.jar' | head -n1)" >> "$GITHUB_OUTPUT"
 
-      - name: capture neoforge artifacts
-        uses: actions/upload-artifact@v4
+      - name: capture fabric jar
+        uses: actions/upload-artifact@v7
         with:
-          name: neoforge
-          path: |
-            neoforge/build/libs/*.jar
-            !neoforge/build/libs/*-raw.jar
+          path: ${{ steps.jars.outputs.fabric }}
+          archive: false
+
+      - name: capture neoforge jar
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.jars.outputs.neoforge }}
+          archive: false
