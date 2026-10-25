@@ -15,10 +15,13 @@
     "environment": "*",
     "entrypoints": {
         "main": [
-            "me.imbanana.modtemplate.fabric.ModtemplateFabric"
+            "me.imbanana.vanillawaypoints.fabric.VanillaWaypointsFabric"
         ],
         "client": [
-            "me.imbanana.modtemplate.fabric.client.ModtemplateFabricClient"
+            "me.imbanana.vanillawaypoints.fabric.VanillaWaypointsClientFabric"
+        ],
+        "modmenu": [
+            "me.imbanana.vanillawaypoints.fabric.ModMenuEntry"
         ]
     },
     "mixins": [
@@ -28,6 +31,11 @@
         "fabricloader": "${loader_version_range}",
         "minecraft": "${mc_version_range}",
         "java": ">=${java_version}",
+        "yet_another_config_lib_v3": ">=${yacl_version}",
         "fabric-api": "*"
+    },
+    "custom": {
+        "modmenu": {
+        }
     }
 }

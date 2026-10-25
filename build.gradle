@@ -31,6 +31,11 @@ subprojects {
         // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
         // See https://docs.gradle.org/current/userguide/declaring_repositories.html
         // for more information about repositories.
+
+        maven {
+            name 'Xander Maven'
+            url 'https://maven.isxander.dev/releases'
+        }
     }
 
     dependencies {
@@ -93,13 +98,14 @@ subprojects {
                     mod_id: project.mod_id,
                     modrinth_id: project.modrinth_id,
                     java_version: project.java_version,
+                    yacl_version: project.yacl_version,
                     mc_version_range: project.property(loader + "_game_version_range"),
                     loader_version_range: project.property(loader + "_loader_version_range")
             ]
 
             inputs.properties projProperties
 
-            filesMatching(["META-INF/neoforge.mods.toml", "fabric.mod.json", "*.mixins.json", "architectury.common.json"]) {
+            filesMatching(["META-INF/neoforge.mods.toml", "fabric.mod.json", "*.mixins.json"]) {
                 expand projProperties
             }
         }
@@ -117,6 +123,12 @@ subprojects {
             if (loader == "fabric") {
                 dependencies {
                     required.project "fabric-api"
+                    required.project "yacl"
+                    optional.project "modmenu"
+                }
+            } else if (loader == "neoforge") {
+                dependencies {
+                    required.project "yacl"
                 }
             }
         }

@@ -2,5 +2,5 @@
     "injected_interfaces": {
 
     },
-    "accessWidener": "${mod_id}.accesswidener"
+    "accessWidener": "vanillawaypoints.accesswidener"
 }

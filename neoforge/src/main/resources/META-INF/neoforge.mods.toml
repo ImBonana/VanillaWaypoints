@@ -28,5 +28,12 @@ versionRange = "${mc_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
+[[dependencies.${mod_id}]]
+modId = "yet_another_config_lib_v3"
+mandatory = true
+versionRange = "[${yacl_version},)"
+ordering = "NONE"
+side = "BOTH"
+
 [[mixins]]
 config = "${mod_id}.mixins.json"
