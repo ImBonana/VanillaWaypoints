@@ -127,7 +127,7 @@ public class VanillaWaypointsClient {
                 LodestoneTracker lodestoneTracker = itemStack.get(DataComponents.LODESTONE_TRACKER);
                 if (lodestoneTracker.target().isPresent()) {
                     globalPos = lodestoneTracker.target().get();
-                    name = Component.literal("Lodestone");
+                    name = itemStack.getCustomName() != null ? itemStack.getCustomName() : Component.literal("Lodestone");
                 }
             }
 
