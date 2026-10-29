@@ -2,21 +2,26 @@ package me.imbanana.vanillawaypoints;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import me.imbanana.vanillawaypoints.cache.CacheManager;
 import me.imbanana.vanillawaypoints.config.ModConfig;
 import me.imbanana.vanillawaypoints.util.ExplorerMaps;
 import me.imbanana.vanillawaypoints.util.Waypoint;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.CommonColors;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
@@ -24,6 +29,9 @@ import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.component.LodestoneTracker;
 import net.minecraft.world.item.component.MapDecorations;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BannerBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
 import net.minecraft.world.phys.Vec3;
 
@@ -34,6 +42,35 @@ import java.util.Optional;
 
 public class VanillaWaypointsClient {
     private static final List<Waypoint> serverWaypoints = new ArrayList<>();
+
+    public static CacheManager cacheManager;
+
+    public static void onLevelChange(Minecraft minecraft, ClientLevel level) {
+        if (cacheManager != null) cacheManager.flushAll();
+        cacheManager = new CacheManager(minecraft, level);
+        cacheManager.loadAllFromDisk();
+    }
+
+    public static void onDisconnect() {
+        if (cacheManager != null) cacheManager.flushAll();
+        cacheManager = null;
+    }
+
+    public static void onChunkLoad(LevelChunk chunk) {
+        if (cacheManager != null) cacheManager.updateChunkData(chunk, (state, blockPos) -> {
+            DyeColor color = VanillaWaypointsClient.getColorFromBlock(state);
+
+            return color == null ? null : new CacheManager.CachedWaypointData(blockPos, color);
+        });
+    }
+
+    public static void onChunkUnload(LevelChunk chunk) {
+        if (cacheManager != null) cacheManager.saveChunk(chunk.getPos().pack());
+    }
+
+    public static void onClientStopping() {
+        if (cacheManager != null) cacheManager.flushAll();
+    }
 
     public static void updateWaypointsFromServer(List<Waypoint> waypoints) {
         serverWaypoints.clear();
@@ -132,7 +169,7 @@ public class VanillaWaypointsClient {
             }
 
             if (globalPos.dimension().equals(playerDimension)) {
-                waypoints.add(new Waypoint(globalPos.pos(), name, Waypoint.createIcon(MapDecorationTypes.TARGET_X, true), CommonColors.WHITE));
+                waypoints.add(new Waypoint(globalPos.pos(), name, Waypoint.createIcon(MapDecorationTypes.TARGET_X, true), lookupBlockColor((ClientLevel) player.level(), globalPos.pos())));
             }
         } else if (itemStack.is(Items.RECOVERY_COMPASS)) {
             Optional<GlobalPos> lastDeathLocationOptional = player.getLastDeathLocation();
@@ -176,5 +213,38 @@ public class VanillaWaypointsClient {
         }
 
         return waypoints;
+    }
+
+    private static int lookupBlockColor(ClientLevel level, BlockPos pos) {
+        BlockPos colorBlockPos = pos.above();
+        if (isChunkLoaded(level, pos)) {
+            BlockState blockState = level.getBlockState(colorBlockPos);
+            DyeColor color = getColorFromBlock(blockState);
+
+            if (color != null && cacheManager != null && !cacheManager.hasWaypointData(colorBlockPos)) {
+                cacheManager.saveWaypointData(colorBlockPos, color);
+            }
+
+            return color != null ? color.getTextColor() : CommonColors.WHITE;
+        }
+
+        if (cacheManager == null) return CommonColors.WHITE;
+
+        CacheManager.CachedWaypointData data = cacheManager.getCachedWaypointData(colorBlockPos);
+        return data != null ? data.color().getTextColor() : CommonColors.WHITE;
+    }
+
+    private static boolean isChunkLoaded(ClientLevel level, BlockPos pos) {
+        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        return level.getChunkSource().getChunkNow(chunkX, chunkZ) != null;
+    }
+
+    private static DyeColor getColorFromBlock(BlockState state) {
+        if (state.getBlock() instanceof BannerBlock bannerBlock) {
+            return bannerBlock.getColor();
+        }
+
+        return null;
     }
 }

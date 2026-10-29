@@ -55,10 +55,10 @@ public final class VanillaWaypoints {
         if (itemStack.has(DataComponents.MAP_ID)) {
             MapItemSavedData data = MapItem.getSavedData(itemStack.get(DataComponents.MAP_ID), player.level());
 
-            if (data != null) {
+            if (data != null && data.dimension.equals(player.level().dimension())) {
                 waypoints.addAll(data.getBanners().stream().map(mapBanner -> new Waypoint(mapBanner.pos(), mapBanner.name().orElse(Component.empty()), Waypoint.createIcon(mapBanner.getDecoration(), false), mapBanner.color().getTextColor())).toList());
             }
-        } else  if (itemStack.has(DataComponents.BUNDLE_CONTENTS)) {
+        } else if (itemStack.has(DataComponents.BUNDLE_CONTENTS)) {
             BundleContents bundleContents = itemStack.get(DataComponents.BUNDLE_CONTENTS);
 
             for (ItemStack item : bundleContents.itemCopies().toList()) {
